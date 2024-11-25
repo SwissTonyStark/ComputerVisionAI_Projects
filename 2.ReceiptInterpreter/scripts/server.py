@@ -1,51 +1,69 @@
 from flask import Flask, request, jsonify
-from transcriber import get_transcription
-from processor import extract_recipe_info
-from notion_uploader import send_to_notion
+import logging
 
 app = Flask(__name__)
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 @app.route('/process', methods=['POST'])
 def process_video():
-    """
-    API endpoint for processing YouTube video URLs.
-    """
-    # Validate input
-    data = request.get_json()
-    video_url = data.get('video_url')
-
-    if not video_url:
-        return jsonify({"error": "Missing 'video_url' in the request body"}), 400
-    
-    print(request.json.get('video_url'))  # Verifica el dato recibido.
-
     try:
-        # Step 1: Transcribe the video
-        transcription = get_transcription(video_url)
-        print(f"Transcription complete: {transcription[:100]}...")  # Debugging output
+        # Log incoming request
+        logging.info("Received request: %s", request.json)
 
-        # Step 2: Extract recipe information
-        recipe_info = extract_recipe_info(transcription)
-        print(f"Extracted recipe info: {recipe_info}")  # Debugging output
+        # Get the JSON payload from the request
+        data = request.json
+        if not data or 'video_url' not in data:
+            return jsonify({"error": "Missing video_url in request"}), 400
 
-        # Step 3: Send to Notion
-        notion_data = {
-            "name": recipe_info.get("name", "Generated Recipe"),  # Default name if missing
-            "ingredients": recipe_info["ingredients"],
-            "preparation": recipe_info["preparation"],
-            "cuisine_type": recipe_info.get("cuisine", "Unknown"),
-            "video_url": video_url,
-            "notes": "Generated automatically from transcription"
-        }
-        send_to_notion(notion_data)
+        video_url = data['video_url']
 
-        return jsonify({"status": "success", "message": "Recipe processed and added to Notion!"}), 200
+        # Check if the URL is a valid YouTube Shorts link
+        if 'youtube.com/shorts/' not in video_url:
+            return jsonify({"error": "Invalid YouTube Shorts URL"}), 400
+
+        # Extract the video ID
+        video_id = extract_shorts_id(video_url)
+        if not video_id:
+            return jsonify({"error": "Failed to extract video ID"}), 400
+
+        # Simulate video analysis or processing
+        result = analyze_shorts_video(video_id)
+
+        return jsonify({
+            "message": "Video processed successfully",
+            "video_id": video_id,
+            "result": result
+        }), 200
 
     except Exception as e:
-        # Log and return any errors
-        print(f"Error processing video: {str(e)}")  # Debugging output
+        logging.error("An error occurred: %s", str(e))
         return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    # Ensure the server is accessible from the internet
-    app.run(host="0.0.0.0", port=5000)
+
+def extract_shorts_id(url):
+    """
+    Extract the video ID from a YouTube Shorts URL.
+    """
+    try:
+        # Assume Shorts URLs are always in the format: youtube.com/shorts/<id>
+        return url.split('shorts/')[1].split('?')[0]
+    except IndexError:
+        return None
+
+
+def analyze_shorts_video(video_id):
+    """
+    Simulate the analysis or processing of a Shorts video.
+    """
+    # Placeholder for real logic; return dummy data for now.
+    return {"video_id": video_id, "status": "analyzed"}
+
+
+if __name__ == '__main__':
+    # Use this for local development
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
+    # Comment this line when running locally, and uncomment for Railway.app
+    # app.run()

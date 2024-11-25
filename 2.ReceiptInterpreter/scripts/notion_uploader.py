@@ -12,14 +12,21 @@ def send_to_notion(recipe_data):
     """
     Adds a new recipe row to an existing Notion table.
     """
-    notion.pages.create(
-        parent={"database_id": config["DATABASE_ID"]},
-        properties={
-            "Recipe Name": {"title": [{"text": {"content": recipe_data['name']}}]},
-            "Cuisine Type": {"select": {"name": recipe_data.get('cuisine_type', 'Other')}},  # Optional: default to 'Other'
-            "Ingredients": {"rich_text": [{"text": {"content": recipe_data['ingredients']}}]},
-            "Preparation": {"rich_text": [{"text": {"content": recipe_data['preparation']}}]},
-            "Video Link": {"url": recipe_data['video_url']},
-            "Notes": {"rich_text": [{"text": {"content": recipe_data.get('notes', '')}}]}  # Optional: default to empty
-        }
-    )
+    try:
+        # Debug log to validate data being sent
+        print(f"Sending data to Notion: {recipe_data}")
+
+        notion.pages.create(
+            parent={"database_id": config["DATABASE_ID"]},
+            properties={
+                "Recipe Name": {"title": [{"text": {"content": recipe_data["name"]}}]},
+                "Cuisine Type": {"select": {"name": recipe_data.get("cuisine_type", "Other")}},
+                "Ingredients": {"rich_text": [{"text": {"content": recipe_data["ingredients"]}}]},
+                "Preparation": {"rich_text": [{"text": {"content": recipe_data["preparation"]}}]},
+                "Video Link": {"url": recipe_data["video_url"]},
+                "Notes": {"rich_text": [{"text": {"content": recipe_data.get("notes", "")}}]},
+            }
+        )
+        print("Data successfully sent to Notion!")
+    except Exception as e:
+        print(f"Error sending data to Notion: {e}")

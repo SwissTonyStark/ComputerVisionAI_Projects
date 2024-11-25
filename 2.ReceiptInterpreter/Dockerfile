@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy the project files to the container
 COPY . /app
 
-# Install system dependencies for Whisper and FFmpeg
+# Install system dependencies for Whisper, FFmpeg, and Git
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     git \
@@ -19,5 +19,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port your Flask app will run on
 EXPOSE 5000
 
-# Command to run the server
+# Command to run the Flask server locally
 CMD ["python", "scripts/server.py"]
