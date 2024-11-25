@@ -10,27 +10,40 @@ def process_video():
     """
     API endpoint for processing YouTube video URLs.
     """
-    data = request.json
+    # Validate input
+    data = request.get_json()
     video_url = data.get('video_url')
 
     if not video_url:
-        return jsonify({"error": "Missing video_url"}), 400
+        return jsonify({"error": "Missing 'video_url' in the request body"}), 400
 
     try:
-        # Process the video URL
+        # Step 1: Transcribe the video
         transcription = get_transcription(video_url)
+        print(f"Transcription complete: {transcription[:100]}...")  # Debugging output
+
+        # Step 2: Extract recipe information
         recipe_info = extract_recipe_info(transcription)
-        send_to_notion({
-            "name": "Generated Recipe",
+        print(f"Extracted recipe info: {recipe_info}")  # Debugging output
+
+        # Step 3: Send to Notion
+        notion_data = {
+            "name": recipe_info.get("name", "Generated Recipe"),  # Default name if missing
             "ingredients": recipe_info["ingredients"],
             "preparation": recipe_info["preparation"],
-            "video_url": video_url
-        })
+            "cuisine_type": recipe_info.get("cuisine", "Unknown"),
+            "video_url": video_url,
+            "notes": "Generated automatically from transcription"
+        }
+        send_to_notion(notion_data)
 
-        return jsonify({"status": "success", "message": "Recipe processed successfully!"})
+        return jsonify({"status": "success", "message": "Recipe processed and added to Notion!"}), 200
 
     except Exception as e:
+        # Log and return any errors
+        print(f"Error processing video: {str(e)}")  # Debugging output
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    # Ensure the server is accessible from the internet
     app.run(host="0.0.0.0", port=5000)
