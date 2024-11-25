@@ -1,9 +1,13 @@
 services:
   receipt-interpreter:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile  # Usa explícitamente el Dockerfile
     ports:
       - "5000:5000"  # Map container port 5000 to localhost:5000
     volumes:
-      - .:/app  # Mount the local project directory
+      - .:/app  # Mount the local project directory into /app in the container
     environment:
-      - FLASK_ENV=development
+      FLASK_ENV: development  # Define variable de entorno para Flask
+    stdin_open: true  # Mantener la terminal abierta
+    tty: true  # Requerido para ejecutar shell interactivo en contenedor
