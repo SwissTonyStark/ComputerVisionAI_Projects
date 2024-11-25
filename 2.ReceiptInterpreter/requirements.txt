@@ -1,0 +1,19 @@
+# Flask for the API server
+flask
+# YouTube transcript extraction
+youtube-transcript-api
+# Whisper for audio transcription
+whisper
+torch
+torchaudio
+torchvision --index-url https://download.pytorch.org/whl/cpu
+# Hugging Face Transformers for processing
+transformers
+# Notion API client
+notion-client
+# FFmpeg library integration (required by Whisper)
+ffmpeg-python
+# YAML configuration file parsing
+pyyaml
+# YouTube audio/video downloader
+yt-dlp

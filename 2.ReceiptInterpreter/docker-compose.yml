@@ -1,0 +1,9 @@
+services:
+  receipt-interpreter:
+    build: .
+    ports:
+      - "5000:5000"  # Map container port 5000 to localhost:5000
+    volumes:
+      - .:/app  # Mount the local project directory
+    environment:
+      - FLASK_ENV=development
