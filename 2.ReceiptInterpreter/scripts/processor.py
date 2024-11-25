@@ -12,15 +12,16 @@ def extract_recipe_info(transcription):
 
         summary = summarized_text[0]['summary_text']
 
-        # Step 2: Extract details (can be expanded with specialized models)
-        ingredients_prompt = f"Extract the ingredients: {summary}"
-        preparation_prompt = f"Extract the preparation steps: {summary}"
-        cuisine_prompt = f"Extract the type of cuisine: {summary}"
+        # Step 2: Extract details from the summary
+        # These prompts can be extended with NLP models or regex for more precision
+        ingredients = f"Extracted Ingredients: {summary.split('.')[0]}"
+        preparation = f"Extracted Preparation Steps: {summary.split('.')[1]}"
+        cuisine = "Cuisine Type: General"  # Placeholder for now; can use a classifier in the future
 
         return {
-            "ingredients": ingredients_prompt,
-            "preparation": preparation_prompt,
-            "cuisine": cuisine_prompt
+            "ingredients": ingredients,
+            "preparation": preparation,
+            "cuisine": cuisine
         }
     except Exception as e:
         raise RuntimeError(f"Recipe extraction failed: {str(e)}")

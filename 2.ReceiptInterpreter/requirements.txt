@@ -17,3 +17,4 @@ ffmpeg-python
 pyyaml
 # YouTube audio/video downloader
 yt-dlp
+pydub

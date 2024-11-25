@@ -1,7 +1,7 @@
-from youtube_transcript_api import YouTubeTranscriptApi
-import yt_dlp  # For downloading audio
-import whisper
+from transformers import pipeline
+import yt_dlp
 import os
+from pydub import AudioSegment
 
 def download_audio(video_url):
     """
@@ -25,28 +25,57 @@ def download_audio(video_url):
     except Exception as e:
         raise RuntimeError(f"Failed to download audio: {str(e)}")
 
-def get_transcription(video_url, whisper_model="base"):
+def split_audio(audio_path, segment_length_ms=30000):
     """
-    Retrieves transcription from a YouTube video.
-    First tries subtitles; if unavailable, uses Whisper.
+    Splits audio into smaller segments to avoid processing limits.
     """
-    video_id = video_url.split("v=")[1]
+    audio = AudioSegment.from_file(audio_path)
+    duration_ms = len(audio)
 
+    segments = []
+    for start in range(0, duration_ms, segment_length_ms):
+        end = min(start + segment_length_ms, duration_ms)
+        segment = audio[start:end]
+        segment_path = f"{audio_path}_segment_{start // 1000}-{end // 1000}.mp3"
+        segment.export(segment_path, format="mp3")
+        segments.append(segment_path)
+    return segments
+
+def transcribe_audio_segments(audio_segments):
+    """
+    Transcribes a list of audio segments using a Hugging Face model.
+    Returns the concatenated transcription.
+    """
     try:
-        # Attempt to fetch subtitles
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'es'])
-        return " ".join([entry['text'] for entry in transcript])
-    except Exception:
-        print("No subtitles found. Using Whisper for transcription.")
-        try:
-            audio_path = download_audio(video_url)
-            model = whisper.load_model(whisper_model)
-            result = model.transcribe(audio_path)
+        asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-base")
+        transcriptions = []
 
-            # Clean up the audio file after transcription
-            if os.path.exists(audio_path):
-                os.remove(audio_path)
+        for segment in audio_segments:
+            result = asr_pipeline(segment)
+            transcriptions.append(result["text"])
 
-            return result["text"]
-        except Exception as e:
-            raise RuntimeError(f"Transcription failed: {str(e)}")
+            # Clean up the segment file after processing
+            if os.path.exists(segment):
+                os.remove(segment)
+
+        return " ".join(transcriptions)
+    except Exception as e:
+        raise RuntimeError(f"Failed to transcribe audio: {str(e)}")
+
+def get_transcription(video_url):
+    """
+    Full pipeline: downloads the audio, splits it into segments, and transcribes.
+    """
+    try:
+        # Step 1: Download audio
+        audio_path = download_audio(video_url)
+        # Step 2: Split audio into smaller segments
+        audio_segments = split_audio(audio_path)
+        # Step 3: Transcribe each segment and concatenate results
+        transcription = transcribe_audio_segments(audio_segments)
+        # Step 4: Clean up original audio file
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+        return transcription
+    except Exception as e:
+        raise RuntimeError(f"Transcription pipeline failed: {str(e)}")
