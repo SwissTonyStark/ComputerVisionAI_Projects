@@ -16,6 +16,8 @@ def process_video():
 
     if not video_url:
         return jsonify({"error": "Missing 'video_url' in the request body"}), 400
+    
+    print(request.json.get('video_url'))  # Verifica el dato recibido.
 
     try:
         # Step 1: Transcribe the video
